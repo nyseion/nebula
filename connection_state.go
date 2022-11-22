@@ -55,15 +55,14 @@ func (f *Interface) newConnectionState(l *logrus.Logger, initiator bool, pattern
 	hs, err := noise.NewHandshakeState(noise.Config{
 		CipherSuite:           cs,
 		Random:                rand.Reader,
-		Pattern:               noise.HandshakeIX,
+		Pattern:               pattern,
 		Initiator:             initiator,
 		StaticKeypair:         static,
-		PresharedKey:          p,
-		PresharedKeyPlacement: 0,
+		PresharedKey:          psk,
+		PresharedKeyPlacement: pskStage,
 	})
-
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	// The queue and ready params prevent a counter race that would happen when
@@ -76,7 +75,7 @@ func (f *Interface) newConnectionState(l *logrus.Logger, initiator bool, pattern
 		certState: curCertState,
 	}
 
-	return ci, nil
+	return ci
 }
 
 func (cs *ConnectionState) MarshalJSON() ([]byte, error) {

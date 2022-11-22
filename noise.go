@@ -22,6 +22,7 @@ type NebulaCipherState struct {
 
 func NewNebulaCipherState(s *noise.CipherState) *NebulaCipherState {
 	return &NebulaCipherState{c: s.Cipher()}
+
 }
 
 // EncryptDanger encrypts and authenticates a given payload.
