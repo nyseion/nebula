@@ -10,6 +10,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/slackhq/nebula/config"
+	"github.com/slackhq/nebula/iputil"
 	"github.com/slackhq/nebula/overlay"
 	"github.com/slackhq/nebula/sshd"
 	"github.com/slackhq/nebula/udp"
@@ -87,6 +88,11 @@ func Main(c *config.C, configTest bool, buildVersion string, logger *logrus.Logg
 		if err != nil {
 			return nil, util.NewContextualError("Error while configuring the sshd", nil, err)
 		}
+	}
+
+	psk, err := NewPskFromConfig(c, iputil.Ip2VpnIp(tunCidr.IP))
+	if err != nil {
+		return nil, NewContextualError("Failed to create psk", nil, err)
 	}
 
 	////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -244,10 +250,6 @@ func Main(c *config.C, configTest bool, buildVersion string, logger *logrus.Logg
 	handshakeManager := NewHandshakeManager(l, tunCidr, preferredRanges, hostMap, lightHouse, udpConns[0], handshakeConfig)
 	lightHouse.handshakeTrigger = handshakeManager.trigger
 
-	//TODO: These will be reused for psk
-	//handshakeMACKey := config.GetString("handshake_mac.key", "")
-	//handshakeAcceptedMACKeys := config.GetStringSlice("handshake_mac.accepted_keys", []string{})
-
 	serveDns := false
 	if c.GetBool("lighthouse.serve_dns", false) {
 		if c.GetBool("lighthouse.am_lighthouse", false) {
@@ -278,6 +280,7 @@ func Main(c *config.C, configTest bool, buildVersion string, logger *logrus.Logg
 		version:                 buildVersion,
 		caPool:                  caPool,
 		disconnectInvalid:       c.GetBool("pki.disconnect_invalid", false),
+		psk:                     psk,
 		relayManager:            NewRelayManager(ctx, l, hostMap, c),
 
 		ConntrackCacheTimeout: conntrackCacheTimeout,

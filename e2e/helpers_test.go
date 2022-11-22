@@ -95,6 +95,24 @@ func newSimpleServer(caCrt *cert.NebulaCertificate, caKey []byte, name string, u
 	c := config.NewC(l)
 	c.LoadString(string(cb))
 
+	if customConfig != nil {
+		ccb, err := yaml.Marshal(customConfig)
+		if err != nil {
+			panic(err)
+		}
+
+		ccm := map[interface{}]interface{}{}
+		err = yaml.Unmarshal(ccb, &ccm)
+		if err != nil {
+			panic(err)
+		}
+
+		err = mergo.Merge(&c.Settings, ccm, mergo.WithAppendSlice)
+		if err != nil {
+			panic(err)
+		}
+	}
+
 	control, err := nebula.Main(c, false, "e2e-test", l, nil)
 
 	if err != nil {
